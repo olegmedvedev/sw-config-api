@@ -1,0 +1,93 @@
+openapi: 3.0.3
+info:
+  title: sw-config-api
+  version: 1.0.0
+  description: |
+    The service returns configuration to the client depending on the version and platform.
+    No authorization, no access checks.
+paths:
+  /config:
+    get:
+      summary: Get configuration for client
+      parameters:
+        - in: query
+          name: appVersion
+          schema:
+            type: string
+            example: 13.6.956
+          required: true
+          description: Client application version (SemVer)
+        - in: query
+          name: platform
+          schema:
+            type: string
+            example: android
+          required: true
+          description: Client platform (e.g., android, ios)
+      responses:
+        '200':
+          description: Configuration found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Config'
+        '404':
+          description: Configuration not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: integer
+                        example: 404
+                      message:
+                        type: string
+                        example: Configuration not found for appVersion 11.0.0 (ios)
+components:
+  schemas:
+    Config:
+      type: object
+      properties:
+        version:
+          $ref: '#/components/schemas/Version'
+        backend_entry_point:
+          $ref: '#/components/schemas/BackendService'
+        assets:
+          $ref: '#/components/schemas/Resource'
+        definitions:
+          $ref: '#/components/schemas/Resource'
+        notifications:
+          $ref: '#/components/schemas/BackendService'
+    Version:
+      type: object
+      properties:
+        required:
+          type: string
+          example: 12.2.423
+        store:
+          type: string
+          example: 13.7.556
+    BackendService:
+      type: object
+      properties:
+        jsonrpc_url:
+          type: string
+          example: api.application.com/jsonrpc/v2
+    Resource:
+      type: object
+      properties:
+        version:
+          type: string
+          example: 13.5.275
+        hash:
+          type: string
+          example: 0b313712189f60d9f46d36577140fb58beaec610353850f050cb897
+        urls:
+          type: array
+          items:
+            type: string
+          example: ["vqe.cdn.application.com", "wg.cdn.application.com"] 
