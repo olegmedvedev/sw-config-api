@@ -130,6 +130,14 @@ func (s *Server) handleConfigGetRequest(args [0]string, argsEscaped bool, w http
 					Name: "platform",
 					In:   "query",
 				}: params.Platform,
+				{
+					Name: "assetsVersion",
+					In:   "query",
+				}: params.AssetsVersion,
+				{
+					Name: "definitionsVersion",
+					In:   "query",
+				}: params.DefinitionsVersion,
 			},
 			Raw: r,
 		}

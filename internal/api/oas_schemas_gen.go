@@ -78,6 +78,47 @@ func (s *Config) SetNotifications(val OptBackendService) {
 
 func (*Config) configGetRes() {}
 
+type ConfigGetBadRequest struct {
+	Error OptConfigGetBadRequestError `json:"error"`
+}
+
+// GetError returns the value of Error.
+func (s *ConfigGetBadRequest) GetError() OptConfigGetBadRequestError {
+	return s.Error
+}
+
+// SetError sets the value of Error.
+func (s *ConfigGetBadRequest) SetError(val OptConfigGetBadRequestError) {
+	s.Error = val
+}
+
+func (*ConfigGetBadRequest) configGetRes() {}
+
+type ConfigGetBadRequestError struct {
+	Code    OptInt    `json:"code"`
+	Message OptString `json:"message"`
+}
+
+// GetCode returns the value of Code.
+func (s *ConfigGetBadRequestError) GetCode() OptInt {
+	return s.Code
+}
+
+// GetMessage returns the value of Message.
+func (s *ConfigGetBadRequestError) GetMessage() OptString {
+	return s.Message
+}
+
+// SetCode sets the value of Code.
+func (s *ConfigGetBadRequestError) SetCode(val OptInt) {
+	s.Code = val
+}
+
+// SetMessage sets the value of Message.
+func (s *ConfigGetBadRequestError) SetMessage(val OptString) {
+	s.Message = val
+}
+
 type ConfigGetNotFound struct {
 	Error OptConfigGetNotFoundError `json:"error"`
 }
@@ -159,6 +200,52 @@ func (o OptBackendService) Get() (v BackendService, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptBackendService) Or(d BackendService) BackendService {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptConfigGetBadRequestError returns new OptConfigGetBadRequestError with value set to v.
+func NewOptConfigGetBadRequestError(v ConfigGetBadRequestError) OptConfigGetBadRequestError {
+	return OptConfigGetBadRequestError{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptConfigGetBadRequestError is optional ConfigGetBadRequestError.
+type OptConfigGetBadRequestError struct {
+	Value ConfigGetBadRequestError
+	Set   bool
+}
+
+// IsSet returns true if OptConfigGetBadRequestError was set.
+func (o OptConfigGetBadRequestError) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptConfigGetBadRequestError) Reset() {
+	var v ConfigGetBadRequestError
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptConfigGetBadRequestError) SetTo(v ConfigGetBadRequestError) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptConfigGetBadRequestError) Get() (v ConfigGetBadRequestError, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptConfigGetBadRequestError) Or(d ConfigGetBadRequestError) ConfigGetBadRequestError {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -303,6 +390,52 @@ func (o OptResource) Or(d Resource) Resource {
 	return d
 }
 
+// NewOptSemVer returns new OptSemVer with value set to v.
+func NewOptSemVer(v SemVer) OptSemVer {
+	return OptSemVer{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSemVer is optional SemVer.
+type OptSemVer struct {
+	Value SemVer
+	Set   bool
+}
+
+// IsSet returns true if OptSemVer was set.
+func (o OptSemVer) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSemVer) Reset() {
+	var v SemVer
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSemVer) SetTo(v SemVer) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSemVer) Get() (v SemVer, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSemVer) Or(d SemVer) SemVer {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptString returns new OptString with value set to v.
 func NewOptString(v string) OptString {
 	return OptString{
@@ -397,13 +530,14 @@ func (o OptVersion) Or(d Version) Version {
 
 // Ref: #/components/schemas/Resource
 type Resource struct {
-	Version OptString `json:"version"`
+	// Resource version in SemVer format (MAJOR.MINOR.PATCH).
+	Version OptSemVer `json:"version"`
 	Hash    OptString `json:"hash"`
 	Urls    []string  `json:"urls"`
 }
 
 // GetVersion returns the value of Version.
-func (s *Resource) GetVersion() OptString {
+func (s *Resource) GetVersion() OptSemVer {
 	return s.Version
 }
 
@@ -418,7 +552,7 @@ func (s *Resource) GetUrls() []string {
 }
 
 // SetVersion sets the value of Version.
-func (s *Resource) SetVersion(val OptString) {
+func (s *Resource) SetVersion(val OptSemVer) {
 	s.Version = val
 }
 
@@ -432,28 +566,32 @@ func (s *Resource) SetUrls(val []string) {
 	s.Urls = val
 }
 
+type SemVer string
+
 // Ref: #/components/schemas/Version
 type Version struct {
-	Required OptString `json:"required"`
-	Store    OptString `json:"store"`
+	// Required version in SemVer format (MAJOR.MINOR.PATCH).
+	Required OptSemVer `json:"required"`
+	// Store version in SemVer format (MAJOR.MINOR.PATCH).
+	Store OptSemVer `json:"store"`
 }
 
 // GetRequired returns the value of Required.
-func (s *Version) GetRequired() OptString {
+func (s *Version) GetRequired() OptSemVer {
 	return s.Required
 }
 
 // GetStore returns the value of Store.
-func (s *Version) GetStore() OptString {
+func (s *Version) GetStore() OptSemVer {
 	return s.Store
 }
 
 // SetRequired sets the value of Required.
-func (s *Version) SetRequired(val OptString) {
+func (s *Version) SetRequired(val OptSemVer) {
 	s.Required = val
 }
 
 // SetStore sets the value of Store.
-func (s *Version) SetStore(val OptString) {
+func (s *Version) SetStore(val OptSemVer) {
 	s.Store = val
 }

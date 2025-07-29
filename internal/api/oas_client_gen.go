@@ -138,7 +138,10 @@ func (c *Client) sendConfigGet(ctx context.Context, params ConfigGetParams) (res
 		}
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			return e.EncodeValue(conv.StringToString(params.AppVersion))
+			if unwrapped := string(params.AppVersion); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
 		}); err != nil {
 			return res, errors.Wrap(err, "encode query")
 		}
@@ -153,6 +156,46 @@ func (c *Client) sendConfigGet(ctx context.Context, params ConfigGetParams) (res
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
 			return e.EncodeValue(conv.StringToString(params.Platform))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "assetsVersion" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "assetsVersion",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AssetsVersion.Get(); ok {
+				if unwrapped := string(val); true {
+					return e.EncodeValue(conv.StringToString(unwrapped))
+				}
+				return nil
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "definitionsVersion" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "definitionsVersion",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.DefinitionsVersion.Get(); ok {
+				if unwrapped := string(val); true {
+					return e.EncodeValue(conv.StringToString(unwrapped))
+				}
+				return nil
+			}
+			return nil
 		}); err != nil {
 			return res, errors.Wrap(err, "encode query")
 		}

@@ -13,10 +13,14 @@ import (
 
 // ConfigGetParams is parameters of GET /config operation.
 type ConfigGetParams struct {
-	// Client application version (SemVer).
-	AppVersion string
+	// Client application version (SemVer format MAJOR.MINOR.PATCH).
+	AppVersion SemVer
 	// Client platform (e.g., android, ios).
 	Platform string
+	// Specific assets version (SemVer format MAJOR.MINOR.PATCH). If not provided, uses appVersion.
+	AssetsVersion OptSemVer
+	// Specific definitions version (SemVer format MAJOR.MINOR.PATCH). If not provided, uses appVersion.
+	DefinitionsVersion OptSemVer
 }
 
 func unpackConfigGetParams(packed middleware.Parameters) (params ConfigGetParams) {
@@ -25,7 +29,7 @@ func unpackConfigGetParams(packed middleware.Parameters) (params ConfigGetParams
 			Name: "appVersion",
 			In:   "query",
 		}
-		params.AppVersion = packed[key].(string)
+		params.AppVersion = packed[key].(SemVer)
 	}
 	{
 		key := middleware.ParameterKey{
@@ -33,6 +37,24 @@ func unpackConfigGetParams(packed middleware.Parameters) (params ConfigGetParams
 			In:   "query",
 		}
 		params.Platform = packed[key].(string)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "assetsVersion",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.AssetsVersion = v.(OptSemVer)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "definitionsVersion",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.DefinitionsVersion = v.(OptSemVer)
+		}
 	}
 	return params
 }
@@ -49,19 +71,34 @@ func decodeConfigGetParams(args [0]string, argsEscaped bool, r *http.Request) (p
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				val, err := d.DecodeValue()
-				if err != nil {
+				var paramsDotAppVersionVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotAppVersionVal = c
+					return nil
+				}(); err != nil {
 					return err
 				}
-
-				c, err := conv.ToString(val)
-				if err != nil {
-					return err
-				}
-
-				params.AppVersion = c
+				params.AppVersion = SemVer(paramsDotAppVersionVal)
 				return nil
 			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if err := params.AppVersion.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
 				return err
 			}
 		} else {
@@ -107,6 +144,132 @@ func decodeConfigGetParams(args [0]string, argsEscaped bool, r *http.Request) (p
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "platform",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: assetsVersion.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "assetsVersion",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotAssetsVersionVal SemVer
+				if err := func() error {
+					var paramsDotAssetsVersionValVal string
+					if err := func() error {
+						val, err := d.DecodeValue()
+						if err != nil {
+							return err
+						}
+
+						c, err := conv.ToString(val)
+						if err != nil {
+							return err
+						}
+
+						paramsDotAssetsVersionValVal = c
+						return nil
+					}(); err != nil {
+						return err
+					}
+					paramsDotAssetsVersionVal = SemVer(paramsDotAssetsVersionValVal)
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.AssetsVersion.SetTo(paramsDotAssetsVersionVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.AssetsVersion.Get(); ok {
+					if err := func() error {
+						if err := value.Validate(); err != nil {
+							return err
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "assetsVersion",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: definitionsVersion.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "definitionsVersion",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotDefinitionsVersionVal SemVer
+				if err := func() error {
+					var paramsDotDefinitionsVersionValVal string
+					if err := func() error {
+						val, err := d.DecodeValue()
+						if err != nil {
+							return err
+						}
+
+						c, err := conv.ToString(val)
+						if err != nil {
+							return err
+						}
+
+						paramsDotDefinitionsVersionValVal = c
+						return nil
+					}(); err != nil {
+						return err
+					}
+					paramsDotDefinitionsVersionVal = SemVer(paramsDotDefinitionsVersionValVal)
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.DefinitionsVersion.SetTo(paramsDotDefinitionsVersionVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+			if err := func() error {
+				if value, ok := params.DefinitionsVersion.Get(); ok {
+					if err := func() error {
+						if err := value.Validate(); err != nil {
+							return err
+						}
+						return nil
+					}(); err != nil {
+						return err
+					}
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "definitionsVersion",
 			In:   "query",
 			Err:  err,
 		}

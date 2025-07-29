@@ -13,10 +13,9 @@ paths:
         - in: query
           name: appVersion
           schema:
-            type: string
-            example: 13.6.956
+            $ref: '#/components/schemas/SemVer'
           required: true
-          description: Client application version (SemVer)
+          description: Client application version (SemVer format MAJOR.MINOR.PATCH)
         - in: query
           name: platform
           schema:
@@ -24,6 +23,18 @@ paths:
             example: android
           required: true
           description: Client platform (e.g., android, ios)
+        - in: query
+          name: assetsVersion
+          schema:
+            $ref: '#/components/schemas/SemVer'
+          required: false
+          description: Specific assets version (SemVer format MAJOR.MINOR.PATCH). If not provided, uses appVersion.
+        - in: query
+          name: definitionsVersion
+          schema:
+            $ref: '#/components/schemas/SemVer'
+          required: false
+          description: Specific definitions version (SemVer format MAJOR.MINOR.PATCH). If not provided, uses appVersion.
       responses:
         '200':
           description: Configuration found
@@ -31,6 +42,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Config'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: integer
+                        example: 400
+                      message:
+                        type: string
+                        example: "Missing required parameter: appVersion"
         '404':
           description: Configuration not found
           content:
@@ -46,9 +73,14 @@ paths:
                         example: 404
                       message:
                         type: string
-                        example: Configuration not found for appVersion 11.0.0 (ios)
+                        example: Configuration not found
 components:
   schemas:
+    SemVer:
+      type: string
+      pattern: '^\d+\.\d+\.\d+$'
+      description: Semantic version in MAJOR.MINOR.PATCH format
+      example: 13.6.956
     Config:
       type: object
       properties:
@@ -66,11 +98,11 @@ components:
       type: object
       properties:
         required:
-          type: string
-          example: 12.2.423
+          $ref: '#/components/schemas/SemVer'
+          description: Required version in SemVer format (MAJOR.MINOR.PATCH)
         store:
-          type: string
-          example: 13.7.556
+          $ref: '#/components/schemas/SemVer'
+          description: Store version in SemVer format (MAJOR.MINOR.PATCH)
     BackendService:
       type: object
       properties:
@@ -81,8 +113,8 @@ components:
       type: object
       properties:
         version:
-          type: string
-          example: 13.5.275
+          $ref: '#/components/schemas/SemVer'
+          description: Resource version in SemVer format (MAJOR.MINOR.PATCH)
         hash:
           type: string
           example: 0b313712189f60d9f46d36577140fb58beaec610353850f050cb897
@@ -90,4 +122,4 @@ components:
           type: array
           items:
             type: string
-          example: ["vqe.cdn.application.com", "wg.cdn.application.com"] 
+          example: [ "vqe.cdn.application.com", "wg.cdn.application.com" ]
