@@ -138,6 +138,33 @@ func TestConfigWithExplicitVersions(t *testing.T) {
 			expectedStatus:     http.StatusOK,
 			description:        "Only explicit definitions version",
 		},
+		{
+			name:               "assets_version_exact_match",
+			appVersion:         "14.8.447",
+			platform:           "android",
+			assetsVersion:      "14.8.447",
+			definitionsVersion: "",
+			expectedStatus:     http.StatusOK,
+			description:        "Assets version exact match",
+		},
+		{
+			name:               "assets_version_incompatible_major",
+			appVersion:         "14.8.447",
+			platform:           "android",
+			assetsVersion:      "13.2.528",
+			definitionsVersion: "",
+			expectedStatus:     http.StatusNotFound,
+			description:        "Assets version incompatible major",
+		},
+		{
+			name:               "assets_and_definitions_versions",
+			appVersion:         "14.8.447",
+			platform:           "android",
+			assetsVersion:      "14.8.447",
+			definitionsVersion: "14.8.98",
+			expectedStatus:     http.StatusOK,
+			description:        "Both assets and definitions versions",
+		},
 	}
 
 	for _, tc := range testCases {

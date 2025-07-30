@@ -594,3 +594,128 @@ func TestConfigService_CompatibilityChecks(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigService_SpecificAssetVersionRequests(t *testing.T) {
+	// Arrange
+	ctx := context.Background()
+
+	mockAssetRepo := &MockResourceRepo{}
+	mockDefinitionRepo := &MockResourceRepo{}
+	mockAssetURLRepo := &MockURLRepo{}
+	mockDefinitionURLRepo := &MockURLRepo{}
+	mockPlatformVersionRepo := &MockPlatformVersionRepository{}
+	mockEntryPointRepo := &MockEntryPointRepository{}
+
+	service := NewConfigService(
+		mockAssetRepo,
+		mockDefinitionRepo,
+		mockAssetURLRepo,
+		mockDefinitionURLRepo,
+		mockPlatformVersionRepo,
+		mockEntryPointRepo,
+	)
+
+	// Mock platform version
+	mockPlatformVersionRepo.On("GetPlatformVersion", ctx, "android").Return(&storage.PlatformVersion{
+		RequiredVersion: "12.2.423",
+		StoreVersion:    "13.7.556",
+	}, nil)
+
+	// Mock URLs
+	mockAssetURLRepo.On("ListURLs", ctx).Return([]string{"https://cdn.example.com/assets"}, nil)
+	mockDefinitionURLRepo.On("ListURLs", ctx).Return([]string{"https://cdn.example.com/definitions"}, nil)
+
+	// Mock entry points
+	mockEntryPointRepo.On("Get", ctx).Return(map[string]string{
+		"backend_entry_point": "api.application.com/jsonrpc/v2",
+		"notifications":       "notifications.application.com/jsonrpc/v1",
+	}, nil)
+
+	t.Run("assets_version_exact_match_14.8.447", func(t *testing.T) {
+		// Arrange
+		params := ClientParams{
+			Platform:      "android",
+			AppVersion:    "14.8.447",
+			AssetsVersion: "14.8.447",
+		}
+
+		// Mock assets with exact version
+		mockAssetRepo.On("GetResource", ctx, "android", "14.8.447").Return(&storage.Resource{
+			Version: "14.8.447",
+			Hash:    "7b49ade9146a11ecbafa1b3c9ed25d1972e1a7c8b2b292e8b3ad1bb599024804",
+		}, nil)
+
+		// Mock definitions with compatible version
+		mockDefinitionRepo.On("GetCompatibleResource", ctx, "android", "14.8.447").Return(&storage.Resource{
+			Version: "14.8.98",
+			Hash:    "def456",
+		}, nil)
+
+		// Act
+		config, err := service.GetConfiguration(ctx, params)
+
+		// Assert
+		require.NoError(t, err)
+		assert.NotNil(t, config)
+		assert.Equal(t, "14.8.447", config.Assets.Version)
+		assert.Equal(t, "14.8.98", config.Definitions.Version)
+	})
+
+	t.Run("assets_version_incompatible_13.2.528", func(t *testing.T) {
+		// Arrange
+		params := ClientParams{
+			Platform:      "android",
+			AppVersion:    "14.8.447",
+			AssetsVersion: "13.2.528",
+		}
+
+		// Mock assets with incompatible version - should return not found
+		mockAssetRepo.On("GetResource", ctx, "android", "13.2.528").Return(nil, sql.ErrNoRows)
+
+		// Act
+		config, err := service.GetConfiguration(ctx, params)
+
+		// Assert
+		assert.Error(t, err)
+		assert.Nil(t, config)
+		assert.Contains(t, err.Error(), "assets not found")
+	})
+
+	t.Run("assets_and_definitions_versions_14.8.447_and_14.8.98", func(t *testing.T) {
+		// Arrange
+		params := ClientParams{
+			Platform:           "android",
+			AppVersion:         "14.8.447",
+			AssetsVersion:      "14.8.447",
+			DefinitionsVersion: "14.8.98",
+		}
+
+		// Mock assets with exact version
+		mockAssetRepo.On("GetResource", ctx, "android", "14.8.447").Return(&storage.Resource{
+			Version: "14.8.447",
+			Hash:    "7b49ade9146a11ecbafa1b3c9ed25d1972e1a7c8b2b292e8b3ad1bb599024804",
+		}, nil)
+
+		// Mock definitions with exact version
+		mockDefinitionRepo.On("GetResource", ctx, "android", "14.8.98").Return(&storage.Resource{
+			Version: "14.8.98",
+			Hash:    "abc123",
+		}, nil)
+
+		// Act
+		config, err := service.GetConfiguration(ctx, params)
+
+		// Assert
+		require.NoError(t, err)
+		assert.NotNil(t, config)
+		assert.Equal(t, "14.8.447", config.Assets.Version)
+		assert.Equal(t, "14.8.98", config.Definitions.Version)
+	})
+
+	mockAssetRepo.AssertExpectations(t)
+	mockDefinitionRepo.AssertExpectations(t)
+	mockAssetURLRepo.AssertExpectations(t)
+	mockDefinitionURLRepo.AssertExpectations(t)
+	mockPlatformVersionRepo.AssertExpectations(t)
+	mockEntryPointRepo.AssertExpectations(t)
+}
