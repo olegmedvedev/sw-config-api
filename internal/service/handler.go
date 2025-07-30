@@ -2,19 +2,22 @@ package service
 
 import (
 	"context"
+	"log/slog"
 
 	"sw-config-api/internal/api"
 )
 
 // Handler handles API requests and business logic
 type Handler struct {
-	configService *ConfigService
+	configService ConfigServiceInterface
+	logger        *slog.Logger
 }
 
 // NewHandler creates a new handler with config service
-func NewHandler(configService *ConfigService) *Handler {
+func NewHandler(configService ConfigServiceInterface, logger *slog.Logger) *Handler {
 	return &Handler{
 		configService: configService,
+		logger:        logger,
 	}
 }
 
@@ -52,10 +55,17 @@ func (h *Handler) ConfigGet(ctx context.Context, params api.ConfigGetParams) (ap
 	if err != nil {
 		// Check if it's a "not found" error and return appropriate API response
 		if IsNotFoundError(err) {
+			// Log the not found error
+			h.logger.Warn("Configuration not found",
+				"error", err.Error(),
+				"platform", clientParams.Platform,
+				"appVersion", clientParams.AppVersion,
+			)
+
 			return &api.ConfigGetNotFound{
 				Error: api.NewOptConfigGetNotFoundError(api.ConfigGetNotFoundError{
 					Code:    api.NewOptInt(404),
-					Message: api.NewOptString(err.Error()),
+					Message: api.NewOptString("Configuration not found"),
 				}),
 			}, nil
 		}

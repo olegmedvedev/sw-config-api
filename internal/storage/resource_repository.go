@@ -22,7 +22,7 @@ type ResourceRepositoryImpl struct {
 func NewResourceRepository(ctx context.Context, db *sqlx.DB, tableName string, compatibility VersionCompatibility) (*ResourceRepositoryImpl, error) {
 	// Prepare statement for getting exact resource
 	getResourceStmt, err := db.PreparexContext(ctx,
-		fmt.Sprintf("SELECT platform, version, hash FROM %s WHERE platform = ? AND version = ?", tableName))
+		fmt.Sprintf("SELECT version, hash FROM %s WHERE platform = ? AND version = ?", tableName))
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare getResource statement: %w", err)
 	}
@@ -32,14 +32,14 @@ func NewResourceRepository(ctx context.Context, db *sqlx.DB, tableName string, c
 	switch compatibility {
 	case MajorOnly:
 		getCompatibleResourceStmt, err = db.PreparexContext(ctx,
-			fmt.Sprintf(`SELECT platform, version, hash FROM %s
+			fmt.Sprintf(`SELECT version, hash FROM %s
 			 WHERE platform = ?
 			 AND SUBSTRING_INDEX(version, '.', 1) = SUBSTRING_INDEX(?, '.', 1)
 			 ORDER BY version DESC
 			 LIMIT 1`, tableName))
 	case MajorMinor:
 		getCompatibleResourceStmt, err = db.PreparexContext(ctx,
-			fmt.Sprintf(`SELECT platform, version, hash FROM %s
+			fmt.Sprintf(`SELECT version, hash FROM %s
 			 WHERE platform = ?
 			 AND CONCAT(SUBSTRING_INDEX(version, '.', 2)) = CONCAT(SUBSTRING_INDEX(?, '.', 2))
 			 ORDER BY version DESC

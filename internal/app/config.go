@@ -14,6 +14,12 @@ type Config struct {
 	DBPassword string `env:"DB_PASSWORD,default="`
 	DBName     string `env:"DB_NAME,default=sw_config"`
 	ServerAddr string `env:"SERVER_ADDR,default=:8080"`
+
+	// Redis configuration
+	RedisAddr     string `env:"REDIS_ADDR,default=localhost:6379"`
+	RedisPassword string `env:"REDIS_PASSWORD,default="`
+	RedisDB       int    `env:"REDIS_DB,default=0"`
+	CacheTTL      int    `env:"CACHE_TTL_SECONDS,default=300"` // 5 minutes default
 }
 
 func LoadConfig(ctx context.Context) (*Config, error) {
@@ -26,7 +32,9 @@ func LoadConfig(ctx context.Context) (*Config, error) {
 		"db_host", config.DBHost,
 		"db_port", config.DBPort,
 		"db_name", config.DBName,
-		"server_addr", config.ServerAddr)
+		"server_addr", config.ServerAddr,
+		"redis_addr", config.RedisAddr,
+		"cache_ttl_seconds", config.CacheTTL)
 
 	return &config, nil
 }

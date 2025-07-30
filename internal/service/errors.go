@@ -1,23 +1,13 @@
 package service
 
 import (
-	"errors"
-	"fmt"
+	"sw-config-api/internal/errors"
 )
 
-// NotFoundError represents a not found error with details
-type NotFoundError struct {
-	Platform   string
-	AppVersion string
-}
+// NotFoundError is an alias for errors.NotFoundError
+type NotFoundError = errors.NotFoundError
 
-func (e *NotFoundError) Error() string {
-	if e.AppVersion != "" {
-		return fmt.Sprintf("configuration not found for appVersion %s (%s)", e.AppVersion, e.Platform)
-	}
-	return fmt.Sprintf("configuration not found for %s", e.Platform)
-}
-
+// IsNotFoundError is an alias for errors.IsNotFoundError
 func IsNotFoundError(err error) bool {
-	return errors.Is(err, &NotFoundError{})
+	return errors.IsNotFoundError(err)
 }

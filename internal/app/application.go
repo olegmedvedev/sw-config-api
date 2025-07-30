@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"sw-config-api/internal/api"
+	"sw-config-api/internal/cache"
 	"sw-config-api/internal/middleware"
 	"sw-config-api/internal/service"
 	"sw-config-api/internal/storage"
@@ -21,6 +22,7 @@ import (
 type Application struct {
 	logger     *slog.Logger
 	db         *sqlx.DB
+	cache      cache.Interface
 	handler    *service.Handler
 	apiServer  *api.Server
 	httpServer *http.Server
@@ -43,6 +45,16 @@ func New(ctx context.Context, config *Config) (*Application, error) {
 	}
 
 	db, err := storage.New(storageConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize Redis cache
+	redisCache, err := cache.NewRedisCache(
+		config.RedisAddr,
+		config.RedisPassword,
+		config.RedisDB,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -82,13 +94,23 @@ func New(ctx context.Context, config *Config) (*Application, error) {
 		platformVersionRepository,
 	)
 
-	// Initialize handler with config service
-	handler := service.NewHandler(configService)
+	// Wrap with caching
+	cachedConfigService := service.NewCachedConfigService(
+		configService,
+		redisCache,
+		time.Duration(config.CacheTTL)*time.Second,
+		logger,
+	)
+
+	// Initialize handler with cached config service
+	handler := service.NewHandler(cachedConfigService, logger)
 
 	// Create API server with custom error handler and logging middleware
 	apiServer, err := api.NewServer(
 		handler,
-		api.WithErrorHandler(api.CustomErrorHandler),
+		api.WithErrorHandler(func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
+			middleware.CustomErrorHandler(ctx, w, r, err, logger)
+		}),
 		api.WithMiddleware(
 			middleware.LoggingMiddleware(logger),
 		),
@@ -109,6 +131,7 @@ func New(ctx context.Context, config *Config) (*Application, error) {
 	return &Application{
 		logger:     logger,
 		db:         db,
+		cache:      redisCache,
 		handler:    handler,
 		apiServer:  apiServer,
 		httpServer: httpServer,
@@ -137,6 +160,11 @@ func (app *Application) Shutdown(ctx context.Context) error {
 
 	if err := app.db.Close(); err != nil {
 		app.logger.Error("failed to close database", "error", err)
+		return err
+	}
+
+	if err := app.cache.Close(); err != nil {
+		app.logger.Error("failed to close cache", "error", err)
 		return err
 	}
 

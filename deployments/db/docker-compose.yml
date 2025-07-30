@@ -19,6 +19,20 @@ services:
       timeout: 10s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: sw-config-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   db-migration:
     image: kukymbr/goose-docker:3.24.2
     container_name: sw-config-db-migration
@@ -34,4 +48,6 @@ services:
 
 volumes:
   db_data:
+    driver: local
+  redis_data:
     driver: local 

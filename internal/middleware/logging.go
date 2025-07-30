@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"sw-config-api/internal/api"
+	apperr "sw-config-api/internal/errors"
 
 	"github.com/ogen-go/ogen/middleware"
 	"github.com/rs/xid"
@@ -63,10 +64,18 @@ func LoggingMiddleware(logger *slog.Logger) api.Middleware {
 
 		// Log request completion
 		if err != nil {
-			requestLogger.Error("request failed",
-				"duration_ms", duration.Milliseconds(),
-				"error", err.Error(),
-			)
+			// Check if it's a "not found" error and log as WARNING
+			if apperr.IsNotFoundError(err) {
+				requestLogger.Warn("Configuration not found",
+					"duration_ms", duration.Milliseconds(),
+					"error", err.Error(),
+				)
+			} else {
+				requestLogger.Error("request failed",
+					"duration_ms", duration.Milliseconds(),
+					"error", err.Error(),
+				)
+			}
 		} else {
 			requestLogger.Info("request completed",
 				"duration_ms", duration.Milliseconds(),
