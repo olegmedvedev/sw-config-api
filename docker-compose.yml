@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: sw-config-api
+    ports:
+      - "8080:8080"
+    environment:
+      # Database configuration
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=rootpassword
+      - DB_NAME=sw_config
+      
+      # Server configuration
+      - SERVER_ADDR=:8080
+      
+      # Redis configuration
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+      - CACHE_TTL_SECONDS=300
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    container_name: sw-config-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: sw_config
+      MYSQL_USER: sw_user
+      MYSQL_PASSWORD: sw_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./deployments/db/migrations/data:/var/lib/mysql-files/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: sw-config-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db-migration:
+    image: kukymbr/goose-docker:3.24.2
+    container_name: sw-config-db-migration
+    environment:
+      - GOOSE_DRIVER=mysql
+      - GOOSE_DBSTRING=root:rootpassword@tcp(db:3306)/sw_config?parseTime=true
+    volumes:
+      - ./deployments/db/migrations:/migrations
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:
+    driver: local
+  redis_data:
+    driver: local 
