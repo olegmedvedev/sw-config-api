@@ -91,18 +91,6 @@ internal/cache    — кэширование с Redis
 
 ---
 
-## 🔗 Архитектура
-
-```mermaid
-flowchart TD
-    A[Application] --> B[Service Resolver]
-    B --> C[Repositories]
-    C --> D[Database]
-    B --> E[Cache Redis]
-```
-
----
-
 ## 🧪 Тестирование
 
 ```bash
