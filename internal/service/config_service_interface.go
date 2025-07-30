@@ -1,6 +1,8 @@
 package service
 
-import "context"
+import (
+	"context"
+)
 
 // ConfigServiceInterface defines the interface for config service operations
 type ConfigServiceInterface interface {

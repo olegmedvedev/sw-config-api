@@ -2,9 +2,11 @@ package service
 
 // Configuration represents the complete configuration for a client
 type Configuration struct {
-	Version     VersionInfo
-	Assets      Resource
-	Definitions Resource
+	Version           VersionInfo
+	BackendEntryPoint BackendService
+	Assets            Resource
+	Definitions       Resource
+	Notifications     BackendService
 }
 
 // VersionInfo represents version information for a platform
@@ -18,4 +20,9 @@ type Resource struct {
 	Version string
 	Hash    string
 	Urls    []string
+}
+
+// BackendService represents a backend service configuration
+type BackendService struct {
+	JsonRpcUrl string `json:"jsonrpc_url"`
 }

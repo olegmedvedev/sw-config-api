@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/Masterminds/semver"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -33,16 +34,14 @@ func NewResourceRepository(ctx context.Context, db *sqlx.DB, tableName string, c
 	case MajorOnly:
 		getCompatibleResourceStmt, err = db.PreparexContext(ctx,
 			fmt.Sprintf(`SELECT version, hash FROM %s
-			 WHERE platform = ?
-			 AND SUBSTRING_INDEX(version, '.', 1) = SUBSTRING_INDEX(?, '.', 1)
-			 ORDER BY version DESC
+			 WHERE platform = ? AND major = ?
+			 ORDER BY major DESC, minor DESC, patch DESC
 			 LIMIT 1`, tableName))
 	case MajorMinor:
 		getCompatibleResourceStmt, err = db.PreparexContext(ctx,
 			fmt.Sprintf(`SELECT version, hash FROM %s
-			 WHERE platform = ?
-			 AND CONCAT(SUBSTRING_INDEX(version, '.', 2)) = CONCAT(SUBSTRING_INDEX(?, '.', 2))
-			 ORDER BY version DESC
+			 WHERE platform = ? AND major = ? AND minor = ?
+			 ORDER BY major DESC, minor DESC, patch DESC
 			 LIMIT 1`, tableName))
 	default:
 		return nil, fmt.Errorf("unsupported compatibility level: %v", compatibility)
@@ -75,8 +74,22 @@ func (r *ResourceRepositoryImpl) GetResource(ctx context.Context, platform, vers
 
 // GetCompatibleResource retrieves a compatible resource by platform and app version
 func (r *ResourceRepositoryImpl) GetCompatibleResource(ctx context.Context, platform, appVersion string) (*Resource, error) {
+	// Parse app version to get components
+	version, err := semver.NewVersion(appVersion)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse app version %s: %w", appVersion, err)
+	}
+
 	var resource Resource
-	err := r.getCompatibleResourceStmt.GetContext(ctx, &resource, platform, appVersion)
+	switch r.compatibility {
+	case MajorOnly:
+		err = r.getCompatibleResourceStmt.GetContext(ctx, &resource, platform, version.Major())
+	case MajorMinor:
+		err = r.getCompatibleResourceStmt.GetContext(ctx, &resource, platform, version.Major(), version.Minor())
+	default:
+		return nil, fmt.Errorf("unsupported compatibility level: %v", r.compatibility)
+	}
+
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, err // Return sql.ErrNoRows for "not found" case

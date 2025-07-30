@@ -21,3 +21,8 @@ type URLRepo interface {
 type PlatformVersionRepository interface {
 	GetPlatformVersion(ctx context.Context, platform string) (*storage.PlatformVersion, error)
 }
+
+// EntryPointRepository defines the interface for entry point operations
+type EntryPointRepository interface {
+	Get(ctx context.Context) (map[string]string, error)
+}

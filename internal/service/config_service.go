@@ -26,6 +26,7 @@ type ConfigService struct {
 	assetURLRepository        URLRepo
 	definitionURLRepository   URLRepo
 	platformVersionRepository PlatformVersionRepository
+	entryPointRepository      EntryPointRepository
 }
 
 // NewConfigService creates a new config service
@@ -35,6 +36,7 @@ func NewConfigService(
 	assetURLRepository URLRepo,
 	definitionURLRepository URLRepo,
 	platformVersionRepository PlatformVersionRepository,
+	entryPointRepository EntryPointRepository,
 ) *ConfigService {
 	return &ConfigService{
 		assetRepository:           assetRepository,
@@ -42,8 +44,14 @@ func NewConfigService(
 		assetURLRepository:        assetURLRepository,
 		definitionURLRepository:   definitionURLRepository,
 		platformVersionRepository: platformVersionRepository,
+		entryPointRepository:      entryPointRepository,
 	}
 }
+
+const (
+	backendEntryPointKey       = "backend_entry_point"
+	notificationsEntryPointKey = "notifications"
+)
 
 // GetConfiguration retrieves configuration for the given parameters
 func (s *ConfigService) GetConfiguration(ctx context.Context, params ClientParams) (*Configuration, error) {
@@ -141,11 +149,20 @@ func (s *ConfigService) GetConfiguration(ctx context.Context, params ClientParam
 		return nil, fmt.Errorf("failed to get definition URLs: %w", err)
 	}
 
+	// Get entry points
+	entryPoints, err := s.entryPointRepository.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get entry points: %w", err)
+	}
+
 	// Build configuration
 	config := &Configuration{
 		Version: VersionInfo{
 			Required: platformVersion.RequiredVersion,
 			Store:    platformVersion.StoreVersion,
+		},
+		BackendEntryPoint: BackendService{
+			JsonRpcUrl: entryPoints[backendEntryPointKey],
 		},
 		Assets: Resource{
 			Version: asset.Version,
@@ -156,6 +173,9 @@ func (s *ConfigService) GetConfiguration(ctx context.Context, params ClientParam
 			Version: definition.Version,
 			Hash:    definition.Hash,
 			Urls:    definitionURLs,
+		},
+		Notifications: BackendService{
+			JsonRpcUrl: entryPoints[notificationsEntryPointKey],
 		},
 	}
 

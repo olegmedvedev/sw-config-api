@@ -27,27 +27,23 @@ func NewHandler(configService ConfigServiceInterface, logger *slog.Logger) *Hand
 //
 // GET /config
 func (h *Handler) ConfigGet(ctx context.Context, params api.ConfigGetParams) (api.ConfigGetRes, error) {
-	// Determine which versions to use for assets and definitions
-	assetsVersion := string(params.AppVersion)
-	if params.AssetsVersion.IsSet() {
-		if assetsVer, ok := params.AssetsVersion.Get(); ok {
-			assetsVersion = string(assetsVer)
-		}
-	}
-
-	definitionsVersion := string(params.AppVersion)
-	if params.DefinitionsVersion.IsSet() {
-		if defVer, ok := params.DefinitionsVersion.Get(); ok {
-			definitionsVersion = string(defVer)
-		}
-	}
-
 	// Create config parameters
 	clientParams := ClientParams{
-		Platform:           params.Platform,
-		AppVersion:         string(params.AppVersion),
-		AssetsVersion:      assetsVersion,
-		DefinitionsVersion: definitionsVersion,
+		Platform:   params.Platform,
+		AppVersion: string(params.AppVersion),
+	}
+
+	// Determine which versions to use for assets and definitions
+	if params.AssetsVersion.IsSet() {
+		if assetsVer, ok := params.AssetsVersion.Get(); ok {
+			clientParams.AssetsVersion = string(assetsVer)
+		}
+	}
+
+	if params.DefinitionsVersion.IsSet() {
+		if defVer, ok := params.DefinitionsVersion.Get(); ok {
+			clientParams.DefinitionsVersion = string(defVer)
+		}
 	}
 
 	// Get configuration from business logic layer
@@ -88,6 +84,12 @@ func (h *Handler) ConfigGet(ctx context.Context, params api.ConfigGetParams) (ap
 			Version: api.NewOptSemVer(api.SemVer(config.Definitions.Version)),
 			Hash:    api.NewOptString(config.Definitions.Hash),
 			Urls:    config.Definitions.Urls,
+		}),
+		BackendEntryPoint: api.NewOptBackendService(api.BackendService{
+			JsonrpcURL: api.NewOptString(config.BackendEntryPoint.JsonRpcUrl),
+		}),
+		Notifications: api.NewOptBackendService(api.BackendService{
+			JsonrpcURL: api.NewOptString(config.Notifications.JsonRpcUrl),
 		}),
 	}
 

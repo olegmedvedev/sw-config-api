@@ -19,3 +19,16 @@ type PlatformVersion struct {
 	RequiredVersion string `db:"required_version"`
 	StoreVersion    string `db:"store_version"`
 }
+
+// Entry point keys
+const (
+	BackendEntryPointKey = "backend_entry_point"
+	NotificationsKey     = "notifications"
+)
+
+// EntryPoint represents an entry point configuration in the database
+type EntryPoint struct {
+	ID  int    `db:"id"`
+	Key string `db:"key"`
+	URL string `db:"url"`
+}

@@ -85,6 +85,11 @@ func New(ctx context.Context, config *Config) (*Application, error) {
 		return nil, err
 	}
 
+	entryPointRepository, err := storage.NewEntryPointRepository(db)
+	if err != nil {
+		return nil, err
+	}
+
 	// Initialize config service
 	configService := service.NewConfigService(
 		assetRepository,
@@ -92,6 +97,7 @@ func New(ctx context.Context, config *Config) (*Application, error) {
 		assetURLRepository,
 		definitionURLRepository,
 		platformVersionRepository,
+		entryPointRepository,
 	)
 
 	// Wrap with caching
