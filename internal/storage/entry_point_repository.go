@@ -33,7 +33,7 @@ func (r *EntryPointRepository) Get(ctx context.Context) (map[string]string, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to query entry points: %w", err)
 	}
-	defer rows.Close()
+	defer rows.Close() // nolint:errcheck
 
 	entryPoints := make(map[string]string)
 	for rows.Next() {
