@@ -95,10 +95,10 @@ internal/cache    — кэширование с Redis
 
 ```mermaid
 flowchart TD
-    A[Application] --> B[Service (Resolver)]
+    A[Application] --> B[Service Resolver]
     B --> C[Repositories]
     C --> D[Database]
-    B --> E[Cache (Redis)]
+    B --> E[Cache Redis]
 ```
 
 ---
