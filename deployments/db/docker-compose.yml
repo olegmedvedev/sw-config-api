@@ -40,8 +40,8 @@ services:
       - GOOSE_DRIVER=mysql
       - GOOSE_DBSTRING=root:rootpassword@tcp(db:3306)/sw_config?parseTime=true
     volumes:
-      - ./migrations:/migrations
-    restart: "no"
+      - ./deployments/db/migrations:/migrations
+    restart: on-failure
     depends_on:
       db:
         condition: service_healthy

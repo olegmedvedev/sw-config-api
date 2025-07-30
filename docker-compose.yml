@@ -25,6 +25,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      db-migration:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   db:
@@ -69,7 +71,7 @@ services:
       - GOOSE_DBSTRING=root:rootpassword@tcp(db:3306)/sw_config?parseTime=true
     volumes:
       - ./deployments/db/migrations:/migrations
-    restart: "no"
+    restart: on-failure
     depends_on:
       db:
         condition: service_healthy
